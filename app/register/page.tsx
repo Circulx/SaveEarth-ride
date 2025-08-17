@@ -30,7 +30,7 @@ const clubSchema = z.object({
   country: z.string().min(1, "Country is required"),
   city: z.string().min(1, "City is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
-  licenceNumber: z.string().min(1, "Licence number is required"),
+  licenceNumber: z.string().min(1, "Please share your Vehicle number"),
   website: z.string().optional(),
   instagram: z.string().optional(),
   facebook: z.string().optional(),
@@ -48,9 +48,9 @@ const individualSchema = z.object({
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
   country: z.string().min(1, "Country is required"),
   city: z.string().min(1, "City is required"),
-  bio: z.string().min(10, "Bio must be at least 10 characters"),
+  bio: z.string().min(10, "Enter at least 10 characters"),
   ridingExperience: z.string().min(1, "Riding experience is required"),
-  licenceNumber: z.string().min(1, "Licence number is required"),
+  licenceNumber: z.string().min(1, "Please share your Vehicle number"),
   instagram: z.string().optional(),
   facebook: z.string().optional(),
   twitter: z.string().optional(),
@@ -425,7 +425,7 @@ export default function RegisterPage() {
                   <Input
                     id="licenceNumber"
                     {...register("licenceNumber")}
-                    placeholder="Enter your licence number"
+                    placeholder="Enter your vehicle number"
                     className="bg-background"
                   />
                   {errors.licenceNumber && (
