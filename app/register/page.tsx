@@ -429,7 +429,7 @@ export default function RegisterPage() {
                   <Input
                     id="licenceNumber"
                     {...register("licenceNumber")}
-                    placeholder="Enter your Vehile number"
+                    placeholder="Enter your Vehicle number"
                     className="bg-background"
                   />
                   {errors.licenceNumber && (
