@@ -30,7 +30,7 @@ const clubSchema = z.object({
   country: z.string().min(1, "Country is required"),
   city: z.string().min(1, "City is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
-  licenceNumber: z.string().optional(1, "Please share your Vehicle number"),
+  licenceNumber: z.string().min(1, "Vehicle number is required"),
   website: z.string().optional(),
   instagram: z.string().optional(),
   facebook: z.string().optional(),
@@ -48,9 +48,9 @@ const individualSchema = z.object({
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
   country: z.string().min(1, "Country is required"),
   city: z.string().min(1, "City is required"),
-  bio: z.string().optional(10, "Enter at least 10 characters"),
+  bio: z.string().min(10, "Address must be at least 10 characters"),
   ridingExperience: z.string().min(1, "Riding experience is required"),
-  licenceNumber: z.string().optional(1, "Please share your Vehicle number"),
+  licenceNumber: z.string().min(1, "Vehicle number is required"),
   instagram: z.string().optional(),
   facebook: z.string().optional(),
   twitter: z.string().optional(),
@@ -277,16 +277,20 @@ export default function RegisterPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="ridingExperience">Riding Experience *</Label>
+                      <Label htmlFor="ridingExperience">Blood Group *</Label>
                       <Select onValueChange={(value) => setValue("ridingExperience", value)}>
                         <SelectTrigger className="bg-background">
-                          <SelectValue placeholder="Select your riding experience" />
+                          <SelectValue placeholder="Select your Blood Group" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="beginner">Beginner (0-2 years)</SelectItem>
-                          <SelectItem value="intermediate">Intermediate (3-5 years)</SelectItem>
-                          <SelectItem value="experienced">Experienced (6-10 years)</SelectItem>
-                          <SelectItem value="expert">Expert (10+ years)</SelectItem>
+                          <SelectItem value="B-ve">B-ve</SelectItem>
+                          <SelectItem value="B+ve">B+ve</SelectItem>
+                          <SelectItem value="A-ve">A-ve</SelectItem>
+                          <SelectItem value="A+ve">A+ve</SelectItem>
+                          <SelectItem value="AB+ve">AB+ve</SelectItem>
+                          <SelectItem value="AB-ve">AB-ve</SelectItem>
+                          <SelectItem value="O-ve">O-ve</SelectItem>
+                          <SelectItem value="O+ve">O+ve</SelectItem>
                         </SelectContent>
                       </Select>
                       {errors && "ridingExperience" in errors && errors.ridingExperience && (
@@ -295,11 +299,11 @@ export default function RegisterPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="bio">Riding Details (if any) </Label>
+                      <Label htmlFor="bio">Address *</Label>
                       <Textarea
                         id="bio"
                         {...register("bio")}
-                        placeholder="Tell us about yourself, your passion for riding, and environmental interests..."
+                        placeholder="Share your Address..."
                         rows={4}
                         className="bg-background"
                       />
@@ -420,12 +424,12 @@ export default function RegisterPage() {
                 <div className="space-y-2">
                   <Label htmlFor="licenceNumber" className="flex items-center space-x-2">
                     <Car className="h-4 w-4" />
-                    <span>Vehicle Number</span>
+                    <span>Vehicle Number *</span>
                   </Label>
                   <Input
                     id="licenceNumber"
                     {...register("licenceNumber")}
-                    placeholder="Enter your vehicle number"
+                    placeholder="Enter your Vehile number"
                     className="bg-background"
                   />
                   {errors.licenceNumber && (
@@ -433,7 +437,7 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                {/* Social Media */}
+                {/* Social Media 
                 <div className="space-y-4">
                   <Label className="text-base font-medium">Social Media (Optional)</Label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -470,6 +474,7 @@ export default function RegisterPage() {
                     </div>
                   </div>
                 </div>
+                */}
 
                 {/* Terms and Conditions */}
                 <div className="space-y-4">
