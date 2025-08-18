@@ -44,10 +44,8 @@ const individualSchema = z.object({
   type: z.literal("individual"),
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  emergencyName: z.string().min(2, "Emergency name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
-  emergencyphone: z.string().min(10, "Phone number must be at least 10 digits"),
   country: z.string().min(1, "Country is required"),
   city: z.string().min(1, "City is required"),
   bio: z.string().min(10, "Address must be at least 10 characters"),
@@ -279,29 +277,29 @@ export default function RegisterPage() {
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="emergencyName">Emergency Name *</Label>
+                     <div className="space-y-2">
+                        <Label htmlFor="firstName">Emergency contact *</Label>
                         <Input
-                          id="emergencyName"
-                          {...register("emergencyName")}
-                          placeholder="Enter your emergency person name"
+                          id="firstName"
+                          {...register("firstName")}
+                          placeholder="Enter your emergency contact"
                           className="bg-background"
                         />
-                        {errors && "emergencyName" in errors && errors.emergencyName && (
-                          <p className="text-sm text-red-500">{errors.emergencyName.message}</p>
+                        {errors && "firstName" in errors && errors.firstName && (
+                          <p className="text-sm text-red-500">{errors.firstName.message}</p>
                         )}
                       </div>
                       <div className="space-y-2">
-                      <Label htmlFor="phone">Emergency Phone Number *</Label>
+                    <Label htmlFor="phone">Phone Number *</Label>
                     <Input
-                      id="emergencyphone"
-                      {...register("emergencyphone")}
+                      id="phone"
+                      {...register("phone")}
                       placeholder="Enter emergency phone number"
                       className="bg-background"
                       maxLength={10}
                     />
-                    {errors.phone && <p className="text-sm text-red-500">{errors.emergencyphone.message}</p>}
-                      </div>
+                    {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
+                    </div>
                     </div>
 
                     <div className="space-y-2">
