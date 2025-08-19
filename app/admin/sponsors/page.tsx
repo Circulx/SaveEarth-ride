@@ -790,7 +790,63 @@ export default function AdminSponsorsPage() {
                   />
                 </div>
               </div>
-
+              {/* Logo Upload Section */}
+              <div className="space-y-2">
+                <Label htmlFor="logo">Sponsor Logo</Label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex-1">
+                    <Input
+                      id="logo"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (!file.type.startsWith('image/')) {
+                          toast.error('Please select a valid image file');
+                          return;
+                        }
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast.error('Image size should be less than 5MB');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const result = ev.target?.result as string;
+                          setLogoPreview(result);
+                          setFormData(prev => ({ ...prev, logo: result }));
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="cursor-pointer"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Upload a logo for this sponsor (max 5MB, image files only) or paste a URL below
+                    </p>
+                    <Input
+                      id="logo-url"
+                      value={formData.logo}
+                      onChange={(e) => {
+                        setFormData({...formData, logo: e.target.value});
+                        setLogoPreview(e.target.value);
+                      }}
+                      placeholder="Enter logo URL or Google Drive link"
+                      className="mt-2"
+                    />
+                  </div>
+                  {logoPreview && (
+                    <div className="flex-shrink-0">
+                      <img
+                        src={logoPreview}
+                        alt="Logo Preview"
+                        width={60}
+                        height={60}
+                        className="rounded-lg object-cover border-2 border-gray-300"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
               <div>
                 <Label htmlFor="website">Website</Label>
                 <Input
