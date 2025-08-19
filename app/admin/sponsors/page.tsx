@@ -1,928 +1,711 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { 
-  Handshake, Plus, Edit, Trash2, Save, X, Star, Award,
-  ArrowLeft, Bike, ExternalLink, Building, Loader2, Image as ImageIcon
-} from 'lucide-react';
-import { toast } from 'sonner';
-import Link from 'next/link';
-import * as XLSX from 'xlsx';
+import { useState, useEffect } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog'
+import {
+  ExternalLink,
+  Award,
+  Star,
+  Handshake,
+  Bike,
+  Building,
+  Send,
+  RefreshCw
+} from 'lucide-react'
+import { toast } from 'sonner'
 
-// Google Drive Image parsing utility functions
-const parseGoogleDriveImageUrl = (driveLink: string) => {
-  try {
-    if (!driveLink) return '';
-    
-    // Handle different Google Drive link formats
-    let fileId = '';
-    
-    // Format 1: https://drive.google.com/file/d/FILE_ID/view
-    if (driveLink.includes('/file/d/')) {
-      const match = driveLink.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-      if (match) fileId = match[1];
-    }
-    
-    // Format 2: https://drive.google.com/open?id=FILE_ID
-    else if (driveLink.includes('open?id=')) {
-      const match = driveLink.match(/id=([a-zA-Z0-9_-]+)/);
-      if (match) fileId = match[1];
-    }
-    
-    // Format 3: Already in direct format
-    else if (driveLink.includes('drive.google.com/uc?') || driveLink.includes('drive.google.com/thumbnail?')) {
-      return driveLink;
-    }
-    
-    // If it's a regular URL (not Google Drive), return as is
-    else if (driveLink.startsWith('http') && !driveLink.includes('drive.google.com')) {
-      return driveLink;
-    }
-    
-    if (!fileId) {
-      return driveLink; // Return original link as fallback
-    }
-    
-    // Convert to direct image URL
-    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-    
-  } catch (error) {
-    console.error('Error parsing image URL:', error);
-    return driveLink;
-  }
-};
-
-// Image Preview Component for Sponsors
-const SponsorLogoPreview = ({ src, alt, className = "", onError }: { 
-  src: string; 
-  alt: string; 
-  className?: string; 
-  onError?: () => void;
-}) => {
-  const [imageSrc, setImageSrc] = useState('');
-  const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (src) {
-      setIsLoading(true);
-      setHasError(false);
-      const parsedSrc = parseGoogleDriveImageUrl(src);
-      setImageSrc(parsedSrc);
-    }
-  }, [src]);
-
-  const handleError = () => {
-    if (!hasError && src.includes('drive.google.com')) {
-      setHasError(true);
-      // Try alternative format if thumbnail fails
-      const fileIdMatch = src.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || src.match(/id=([a-zA-Z0-9_-]+)/);
-      if (fileIdMatch) {
-        setImageSrc(`https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`);
-      }
-    } else {
-      setIsLoading(false);
-      setHasError(true);
-      onError?.();
-    }
-  };
-
-  const handleLoad = () => {
-    setIsLoading(false);
-    setHasError(false);
-  };
-
-  if (!src) {
-    return (
-      <div className={`${className} bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center`}>
-        <div className="text-center text-gray-500">
-          <Building className="h-8 w-8 mx-auto mb-2" />
-          <p className="text-sm">No logo</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (hasError) {
-    return (
-      <div className={`${className} bg-red-50 border-2 border-red-200 flex items-center justify-center`}>
-        <div className="text-center text-red-500">
-          <Building className="h-8 w-8 mx-auto mb-2" />
-          <p className="text-sm">Logo failed to load</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative">
-      {isLoading && (
-        <div className={`${className} bg-gray-100 border-2 border-gray-200 flex items-center justify-center absolute inset-0 z-10`}>
-          <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
-        </div>
-      )}
-      <img
-        src={imageSrc}
-        alt={alt}
-        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}
-        onError={handleError}
-        onLoad={handleLoad}
-      />
-    </div>
-  );
-};
-
-// Initial sponsors data
-const initialSponsorsData = [
+/* ──────────────────────────────────────────────────────────
+   Fallback / skeleton data (used only until API responds)
+   ────────────────────────────────────────────────────────── */
+const defaultSponsorsData = [
   {
     id: 1,
     name: 'EcoRide Motors',
-    logo: 'https://images.pexels.com/photos/1119796/pexels-photo-1119796.jpeg?auto=compress&cs=tinysrgb&w=200',
+    logo:
+      'https://images.pexels.com/photos/1119796/pexels-photo-1119796.jpeg?auto=compress&cs=tinysrgb&w=200',
     tier: 'Platinum',
     website: 'https://ecoride.com',
-    description: 'Leading manufacturer of eco-friendly motorcycles and electric bikes. Committed to sustainable transportation solutions.',
-    contribution: 'Provides eco-friendly motorcycles for our rides and sponsors 1000 trees annually.',
-    since: '2022',
+    description:
+      'Leading manufacturer of eco-friendly motorcycles and electric bikes. Committed to sustainable transportation solutions.',
+    contribution:
+      'Provides eco-friendly motorcycles for our rides and sponsors 1000 trees annually.',
+    since: 2022,
     category: 'Automotive',
-    contactEmail: 'partnership@ecoride.com',
-    contactPerson: 'John Smith',
-    amount: 50000,
     type: 'sponsor'
   },
   {
     id: 2,
     name: 'GreenTech Solutions',
-    logo: 'https://images.pexels.com/photos/1416530/pexels-photo-1416530.jpeg?auto=compress&cs=tinysrgb&w=200',
+    logo:
+      'https://images.pexels.com/photos/1416530/pexels-photo-1416530.jpeg?auto=compress&cs=tinysrgb&w=200',
     tier: 'Gold',
     website: 'https://greentech.com',
-    description: 'Technology company focused on environmental solutions and carbon footprint reduction.',
-    contribution: 'Sponsors our mobile app development and provides GPS tracking devices for rides.',
-    since: '2023',
+    description:
+      'Technology company focused on environmental solutions and carbon-footprint reduction.',
+    contribution:
+      'Sponsors our mobile-app development and provides GPS tracking devices for rides.',
+    since: 2023,
     category: 'Technology',
-    contactEmail: 'partners@greentech.com',
-    contactPerson: 'Sarah Johnson',
-    amount: 25000,
     type: 'sponsor'
   },
   {
     id: 3,
     name: 'Global Riders Alliance',
-    logo: 'https://images.pexels.com/photos/1005648/pexels-photo-1005648.jpeg?auto=compress&cs=tinysrgb&w=200',
+    logo:
+      'https://images.pexels.com/photos/1005648/pexels-photo-1005648.jpeg?auto=compress&cs=tinysrgb&w=200',
     tier: '',
     website: 'https://globalriders.org',
-    description: 'International network of motorcycle clubs promoting responsible riding and environmental awareness.',
-    contribution: 'Strategic partnership for global event coordination and rider network expansion.',
-    since: '2022',
+    description:
+      'International network of motorcycle clubs promoting responsible riding and environmental awareness.',
+    contribution:
+      'Strategic partnership for global event coordination and rider-network expansion.',
+    since: 2022,
     category: 'Non-Profit',
-    contactEmail: 'info@globalriders.org',
-    contactPerson: 'Mike Rodriguez',
-    amount: 0,
     type: 'partner'
   }
-];
+]
 
-export default function AdminSponsorsPage() {
-  const [sponsorsData, setSponsorsData] = useState(initialSponsorsData);
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [isAddingNew, setIsAddingNew] = useState(false);
-  const [filterTier, setFilterTier] = useState('all');
-  const [filterType, setFilterType] = useState('all');
-  const [formData, setFormData] = useState({
-    name: '',
-    logo: '',
-    tier: '',
+/* ────────────────────────────────────────────────────────── */
+
+export default function SponsorsPage() {
+  /* -- data & loading state -- */
+  const [sponsorsData, setSponsorsData] = useState(defaultSponsorsData)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  /* -- dialog / form state -- */
+  const [isPartnerFormOpen, setIsPartnerFormOpen] = useState(false)
+  const [partnerForm, setPartnerForm] = useState({
+    type: 'partner',            // sponsor | partner
+    companyName: '',
+    contactPerson: '',
+    email: '',
+    phone: '',
     website: '',
+    category: '',
     description: '',
     contribution: '',
-    since: '',
-    category: '',
-    contactEmail: '',
-    contactPerson: '',
-    amount: '',
-    type: 'sponsor'
-  });
-  const [logoPreview, setLogoPreview] = useState<string>('');
+    proposedTier: '',
+    message: ''
+  })
 
-  const tiers = ['Platinum', 'Gold', 'Silver', 'Bronze'];
-  const categories = ['Automotive', 'Technology', 'Food & Beverage', 'Accessories', 'Non-Profit', 'Energy', 'Finance', 'Healthcare'];
-  const types = ['sponsor', 'partner'];
+  /* ─────────────────────  fetch helpers  ───────────────────── */
+  const loadSponsorsData = async (showToast = false) => {
+    try {
+      if (showToast) setIsRefreshing(true)
 
-  // Load data from Excel on component mount
+      const res = await fetch('/api/sponsors', {
+        method: 'GET',
+        headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+      })
+      const json = await res.json()
+
+      if (res.ok && json.success) {
+        setSponsorsData(json.data)
+        if (showToast) toast.success('Sponsors list refreshed')
+      } else {
+        throw new Error(json.error || 'Unknown response')
+      }
+    } catch (err) {
+      console.error(err)
+      if (showToast) toast.error('Failed to refresh sponsors list')
+    } finally {
+      setIsLoading(false)
+      setIsRefreshing(false)
+    }
+  }
+
+  /* first load */
+  useEffect(() => { loadSponsorsData() }, [])
+
+  /* auto-refresh every 30 s */
   useEffect(() => {
-    loadDataFromGoogleSheets();
-  }, []);
+    const id = setInterval(loadSponsorsData, 30_000)
+    return () => clearInterval(id)
+  }, [])
 
-  // Load data from Google Sheets
-  const loadDataFromGoogleSheets = async () => {
-    try {
-      const response = await fetch('/api/sponsors');
-      const result = await response.json();
-      
-      if (result.success) {
-        setSponsorsData(result.data);
-      } else {
-        console.error('Error loading sponsors data:', result.error);
-        toast.error('Failed to load sponsors data');
-      }
-    } catch (error) {
-      console.error('Error loading sponsors data:', error);
-      toast.error('Failed to load sponsors data');
-    }
-  };
+  /* ───────────────────  computed arrays  ─────────────────── */
+  const sponsors = sponsorsData.filter(s => s.type === 'sponsor')
+  const partners = sponsorsData.filter(s => s.type === 'partner')
 
-  // Save data to Google Sheets
-  const saveDataToGoogleSheets = async (data: any[]) => {
-    try {
-      const response = await fetch('/api/sponsors', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'bulk_save',
-          data: data
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        toast.success('Sponsors data saved to Google Sheets!');
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('Error saving sponsors data:', error);
-      toast.error('Failed to save sponsors data');
-    }
-  };
-
-  // Export to Excel (now gets data from Google Sheets)
-  const exportToExcel = async () => {
-    try {
-      const response = await fetch('/api/sponsors');
-      const result = await response.json();
-      
-      if (result.success) {
-        const ws = XLSX.utils.json_to_sheet(result.data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Sponsors');
-        XLSX.writeFile(wb, `sponsors_data_${new Date().toISOString().split('T')[0]}.xlsx`);
-        toast.success('Sponsors data exported to Excel!');
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('Error exporting sponsors data:', error);
-      toast.error('Failed to export sponsors data');
-    }
-  };
-
-  // Real-time update function (now uses Google Sheets)
-  const updateSponsorsData = async (newData: any[]) => {
-    setSponsorsData(newData);
-    await saveDataToGoogleSheets(newData);
-    
-    // Trigger real-time update
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('adminDataUpdate', { 
-        detail: { section: 'sponsors', data: newData } 
-      }));
-    }
-  };
-
-  // Add new sponsor/partner (now uses API)
-  const handleAdd = async () => {
-    if (!formData.name || !formData.description || !formData.contribution) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/sponsors', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'add',
-          data: {
-            ...formData,
-            amount: parseFloat(formData.amount) || 0
-          }
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        const updatedData = [...sponsorsData, result.data];
-        setSponsorsData(updatedData);
-        
-        resetForm();
-        setIsAddingNew(false);
-        toast.success(`${formData.type === 'sponsor' ? 'Sponsor' : 'Partner'} added successfully!`);
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('Error adding sponsor:', error);
-      toast.error('Failed to add sponsor');
-    }
-  };
-
-  // Update sponsor/partner (now uses API)
-  const handleUpdate = async () => {
-    if (!formData.name || !formData.description || !formData.contribution) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/sponsors', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'update',
-          data: {
-            id: editingItem.id,
-            ...formData,
-            amount: parseFloat(formData.amount) || 0
-          }
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        const updatedData = sponsorsData.map(item => 
-          item.id === editingItem.id ? result.data : item
-        );
-        setSponsorsData(updatedData);
-        
-        setEditingItem(null);
-        resetForm();
-        toast.success(`${formData.type === 'sponsor' ? 'Sponsor' : 'Partner'} updated successfully!`);
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('Error updating sponsor:', error);
-      toast.error('Failed to update sponsor');
-    }
-  };
-
-  // Delete sponsor/partner (now uses API)
-  const handleDelete = async (id: number) => {
-    try {
-      const response = await fetch('/api/sponsors', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          data: { id }
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        const updatedData = sponsorsData.filter(item => item.id !== id);
-        setSponsorsData(updatedData);
-        toast.success('Item deleted successfully!');
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('Error deleting sponsor:', error);
-      toast.error('Failed to delete sponsor');
-    }
-  };
-
-  const handleEdit = (item: any) => {
-    setEditingItem(item);
-    setFormData({
-      name: item.name,
-      logo: item.logo,
-      tier: item.tier,
-      website: item.website,
-      description: item.description,
-      contribution: item.contribution,
-      since: item.since,
-      category: item.category,
-      contactEmail: item.contactEmail,
-      contactPerson: item.contactPerson,
-      amount: item.amount.toString(),
-      type: item.type
-    });
-    setLogoPreview(item.logo || '');
-  };
-
-  // Reset form
-  const resetForm = () => {
-    setFormData({
-      name: '', logo: '', tier: '', website: '', description: '', 
-      contribution: '', since: '', category: '', contactEmail: '', 
-      contactPerson: '', amount: '', type: 'sponsor'
-    });
-    setLogoPreview('');
-  };
-
-  // Filter data
-  const filteredData = sponsorsData.filter(item => {
-    const tierMatch = filterTier === 'all' || item.tier === filterTier;
-    const typeMatch = filterType === 'all' || item.type === filterType;
-    return tierMatch && typeMatch;
-  });
-
+  /* ───────────────────  helpers (badge styles) ───────────── */
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case 'Platinum': return 'bg-gradient-to-r from-gray-300 to-gray-500 text-white';
-      case 'Gold': return 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white';
-      case 'Silver': return 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
-      case 'Bronze': return 'bg-gradient-to-r from-orange-400 to-orange-600 text-white';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Platinum':
+        return 'bg-gradient-to-r from-gray-300 to-gray-500 text-white'
+      case 'Gold':
+        return 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white'
+      case 'Silver':
+        return 'bg-gradient-to-r from-gray-400 to-gray-600 text-white'
+      case 'Bronze':
+        return 'bg-gradient-to-r from-orange-400 to-orange-600 text-white'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
-  };
-
+  }
   const getTierIcon = (tier: string) => {
     switch (tier) {
-      case 'Platinum': return <Award className="h-4 w-4" />;
-      case 'Gold': return <Star className="h-4 w-4" />;
-      case 'Silver': return <Bike className="h-4 w-4" />;
-      case 'Bronze': return <Handshake className="h-4 w-4" />;
-      default: return <Building className="h-4 w-4" />;
+      case 'Platinum':
+        return <Award className="h-4 w-4" />
+      case 'Gold':
+        return <Star className="h-4 w-4" />
+      case 'Silver':
+        return <Bike className="h-4 w-4" />
+      case 'Bronze':
+        return <Building className="h-4 w-4" />
+      default:
+        return <Handshake className="h-4 w-4" />
     }
-  };
+  }
 
+  /* ──────────────────────────────────────────────────────────
+     Partner / Sponsor application POST
+     ────────────────────────────────────────────────────────── */
+  const handlePartnerSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const { companyName, contactPerson, email } = partnerForm
+    if (!companyName || !contactPerson || !email) {
+      toast.error('Please fill in company name, contact person and email')
+      return
+    }
+
+    const payload = {
+      action: 'add',
+      data: {
+        /* 10 required core fields */
+        name: companyName,
+        logo: '', // no logo yet
+        tier: partnerForm.proposedTier,
+        website: partnerForm.website,
+        description: partnerForm.description,
+        contribution: partnerForm.contribution,
+        since: new Date().getFullYear(),
+        category: partnerForm.category,
+        type: partnerForm.type,
+        id: 0, // server will assign
+
+        /* three optional fields requested by the new schema */
+        company_name: companyName,
+        email: email,
+        phone_number: partnerForm.phone
+      }
+    }
+
+    try {
+      const res = await fetch('/api/sponsors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      const json = await res.json()
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Submission failed')
+      }
+
+      setSponsorsData(prev => [...prev, json.data])
+      toast.success('Application submitted – thank you!')
+      setIsPartnerFormOpen(false)
+      setPartnerForm({
+        type: 'partner',
+        companyName: '',
+        contactPerson: '',
+        email: '',
+        phone: '',
+        website: '',
+        category: '',
+        description: '',
+        contribution: '',
+        proposedTier: '',
+        message: ''
+      })
+    } catch (err: any) {
+      console.error(err)
+      toast.error(err.message || 'Could not submit application')
+    }
+  }
+
+  /* ───────────────────  loading skeleton  ────────────────── */
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary mr-3" />
+        <span className="text-gray-600">Loading sponsors…</span>
+      </div>
+    )
+  }
+
+  /* ─────────────────────────  JSX  ───────────────────────── */
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link href="/admin/dashboard">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-            <div className="flex items-center space-x-3">
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-orange-600 bg-clip-text text-transparent">
-                  Sponsors & Partners Management
-                </h1>
-                <p className="text-gray-600">Manage sponsors and strategic partners</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button onClick={exportToExcel} variant="outline">
-              <Building className="h-4 w-4 mr-2" />
-              Export Excel
+      {/* ── Hero Banner ────────────────────── */}
+      <div className="relative py-20 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              'url(https://images.pexels.com/photos/2396045/pexels-photo-2396045.jpeg?auto=compress&cs=tinysrgb&w=1920)',
+            filter: 'brightness(0.2)'
+          }}
+        />
+        <div className="relative z-10 text-center text-white container mx-auto px-4">
+          <Handshake className="h-12 w-12 mb-6 mx-auto" />
+          <h1 className="text-5xl font-bold mb-6">Our Sponsors & Partners</h1>
+          <p className="max-w-3xl mx-auto text-xl mb-8">
+            We’re proud to collaborate with organisations that share our vision
+            of environmental conservation and sustainable transportation.
+          </p>
+
+          <div className="flex items-center justify-center gap-4">
+            <Button
+              size="lg"
+              className="bg-white text-green-600 hover:bg-gray-100"
+              onClick={() => setIsPartnerFormOpen(true)}
+            >
+              <Handshake className="h-5 w-5 mr-2" />
+              Become a Partner
             </Button>
-            <Button onClick={() => setIsAddingNew(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Sponsor/Partner
+            <Button
+              size="lg"
+              className="bg-white text-green-600 hover:bg-gray-100"
+              onClick={() => loadSponsorsData(true)}
+              disabled={isRefreshing}
+            >
+              <RefreshCw
+                className={`h-5 w-5 mr-2 ${
+                  isRefreshing ? 'animate-spin' : ''
+                }`}
+              />
+              {isRefreshing ? 'Refreshing…' : 'Refresh'}
             </Button>
           </div>
         </div>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-orange-500 rounded-full">
-                  <Handshake className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-orange-700">{sponsorsData.length}</div>
-                  <div className="text-sm text-orange-600">Total Partners</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* ── Content ────────────────────────── */}
+      <div className="container mx-auto px-4 py-12">
 
-          <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-yellow-500 rounded-full">
-                  <Star className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-yellow-700">
-                    {sponsorsData.filter(item => item.type === 'sponsor').length}
-                  </div>
-                  <div className="text-sm text-yellow-600">Sponsors</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Sponsors ------------------------------------------------ */}
+        <section className="mb-20">
+          <header className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-2">Our Sponsors</h2>
+            <p className="text-lg text-gray-600">
+              Companies that fuel our mission with their generous support
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Showing {sponsors.length} active sponsor
+              {sponsors.length === 1 ? '' : 's'}
+            </p>
+          </header>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-blue-500 rounded-full">
-                  <Building className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-blue-700">
-                    {sponsorsData.filter(item => item.type === 'partner').length}
-                  </div>
-                  <div className="text-sm text-blue-600">Partners</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-green-500 rounded-full">
-                  <Award className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-green-700">
-                    ${sponsorsData.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}
-                  </div>
-                  <div className="text-sm text-green-600">Total Funding</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-8 border-0 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Handshake className="h-5 w-5 text-gray-500" />
-                <span className="font-medium">Filters:</span>
-              </div>
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="all">All Types</option>
-                {types.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-              <select
-                value={filterTier}
-                onChange={(e) => setFilterTier(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="all">All Tiers</option>
-                {tiers.map(tier => (
-                  <option key={tier} value={tier}>{tier}</option>
-                ))}
-              </select>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setFilterType('all');
-                  setFilterTier('all');
-                }}
-              >
-                Clear Filters
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Sponsors/Partners List */}
-        <Card className="border-0 shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white">
-            <CardTitle>Sponsors & Partners</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {filteredData.map((item) => (
-                <Card key={item.id} className="border-2 border-gray-200 hover:border-primary/50 transition-colors">
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <SponsorLogoPreview
-                        src={item.logo}
-                        alt={item.name}
-                        className="w-20 h-20 rounded-lg object-cover border-2 border-gray-200"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center space-x-3 mb-2">
-                              <h3 className="text-xl font-semibold text-gray-900">
-                                {item.name}
-                              </h3>
-                              {item.tier && (
-                                <Badge className={`${getTierColor(item.tier)} text-xs px-2 py-1`}>
-                                  {getTierIcon(item.tier)}
-                                  <span className="ml-1">{item.tier}</span>
-                                </Badge>
-                              )}
-                              <Badge variant="outline" className="text-xs">
-                                {item.type}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {sponsors.map(s => (
+              <Dialog key={s.id}>
+                <DialogTrigger asChild>
+                  <Card className="cursor-pointer border-0 shadow-lg group relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-blue-400/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <CardContent className="p-6 relative z-10">
+                      <div className="text-center space-y-4">
+                        <div className="relative w-fit mx-auto">
+                          <img
+                            src={s.logo}
+                            alt={s.name}
+                            className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
+                          />
+                          {s.tier && (
+                            <div className="absolute -top-2 -right-2">
+                              <Badge
+                                className={`${getTierColor(
+                                  s.tier
+                                )} text-xs px-2 py-1`}
+                              >
+                                {getTierIcon(s.tier)}
+                                <span className="ml-1">{s.tier}</span>
                               </Badge>
                             </div>
-                            <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                              <span>{item.category}</span>
-                              <span>•</span>
-                              <span>Since {item.since}</span>
-                              {item.amount > 0 && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-green-600 font-medium">${item.amount.toLocaleString()}</span>
-                                </>
-                              )}
-                            </div>
-                            <p className="text-gray-600 mb-2">{item.description}</p>
-                            <p className="text-sm text-gray-500 mb-3">
-                              <strong>Contribution:</strong> {item.contribution}
-                            </p>
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                              <span>Contact: {item.contactPerson}</span>
-                              <span>•</span>
-                              <span>{item.contactEmail}</span>
-                              {item.website && (
-                                <>
-                                  <span>•</span>
-                                  <a 
-                                    href={item.website} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:text-blue-800 flex items-center space-x-1"
-                                  >
-                                    <ExternalLink className="h-3 w-3" />
-                                    <span>Website</span>
-                                  </a>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEdit(item)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDelete(item.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          )}
+                        </div>
+                        <h3 className="text-xl font-bold">{s.name}</h3>
+                        <Badge variant="outline" className="text-xs">
+                          {s.category}
+                        </Badge>
+                        <p className="text-sm text-gray-600 line-clamp-3">
+                          {s.description}
+                        </p>
+                        <div className="text-xs text-gray-500">
+                          Partner since {s.since}
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                    </CardContent>
+                  </Card>
+                </DialogTrigger>
 
-        {/* Add/Edit Dialog */}
-        <Dialog open={isAddingNew || editingItem !== null} onOpenChange={(open) => {
-          if (!open) {
-            setIsAddingNew(false);
-            setEditingItem(null);
-            resetForm();
-          }
-        }}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingItem ? 'Edit Sponsor/Partner' : 'Add New Sponsor/Partner'}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="Company/Organization name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="type">Type *</Label>
-                  <Select onValueChange={(value) => setFormData({...formData, type: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {types.map(type => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-3">
+                      <img
+                        src={s.logo}
+                        alt={s.name}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span>{s.name}</span>
+                          {s.tier && (
+                            <Badge
+                              className={`${getTierColor(s.tier)} text-xs`}
+                            >
+                              {getTierIcon(s.tier)}
+                              <span className="ml-1">{s.tier}</span>
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {s.category} • Since {s.since}
+                        </p>
+                      </div>
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <div className="space-y-4">
+                    <section>
+                      <h4 className="font-semibold mb-2">About</h4>
+                      <p className="text-gray-600">{s.description}</p>
+                    </section>
+                    <section>
+                      <h4 className="font-semibold mb-2">Contribution</h4>
+                      <p className="text-gray-600">{s.contribution}</p>
+                    </section>
+                    {s.website && (
+                      <div className="pt-4">
+                        <Button asChild>
+                          <a
+                            href={s.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Visit Website
+                          </a>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            ))}
+          </div>
+        </section>
+
+        {/* Partners ------------------------------------------------ */}
+        <section className="mb-16">
+          <header className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-2">Strategic Partners</h2>
+            <p className="text-lg text-gray-600">
+              Organisations we collaborate with to amplify our impact
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Showing {partners.length} active partner
+              {partners.length === 1 ? '' : 's'}
+            </p>
+          </header>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {partners.map(p => (
+              <Dialog key={p.id}>
+                <DialogTrigger asChild>
+                  <Card className="cursor-pointer border-0 shadow-lg group">
+                    <CardContent className="p-6">
+                      <div className="text-center space-y-4">
+                        <img
+                          src={p.logo}
+                          alt={p.name}
+                          className="w-16 h-16 mx-auto rounded-full border-2 border-gray-200 object-cover"
+                        />
+                        <h3 className="text-lg font-semibold group-hover:text-primary">
+                          {p.name}
+                        </h3>
+                        <Badge variant="outline" className="text-xs">
+                          {p.category}
+                        </Badge>
+                        <p className="text-sm text-gray-600 line-clamp-3">
+                          {p.description}
+                        </p>
+                        <div className="text-xs text-gray-500">
+                          Since {p.since}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </DialogTrigger>
+
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-3">
+                      <img
+                        src={p.logo}
+                        alt={p.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div>
+                        <div>{p.name}</div>
+                        <p className="text-sm text-gray-500">
+                          Partner since {p.since}
+                        </p>
+                      </div>
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <div className="space-y-4">
+                    <section>
+                      <h4 className="font-semibold mb-2">About</h4>
+                      <p className="text-gray-600">{p.description}</p>
+                    </section>
+                    <section>
+                      <h4 className="font-semibold mb-2">Partnership</h4>
+                      <p className="text-gray-600">{p.contribution}</p>
+                    </section>
+                    {p.website && (
+                      <div className="pt-4">
+                        <Button asChild variant="outline">
+                          <a
+                            href={p.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Visit Website
+                          </a>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* ── Partner / Sponsor Application Dialog ───────────── */}
+      <Dialog open={isPartnerFormOpen} onOpenChange={setIsPartnerFormOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building className="h-6 w-6 text-primary" />
+              Partnership Application
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handlePartnerSubmit} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              {/* partnership type */}
+              <div>
+                <Label>Partnership Type *</Label>
+                <Select
+                  value={partnerForm.type}
+                  onValueChange={v =>
+                    setPartnerForm(f => ({ ...f, type: v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sponsor">Sponsor</SelectItem>
+                    <SelectItem value="partner">Strategic Partner</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* company name */}
+              <div>
+                <Label>Company / Organisation Name *</Label>
+                <Input
+                  value={partnerForm.companyName}
+                  onChange={e =>
+                    setPartnerForm(f => ({
+                      ...f,
+                      companyName: e.target.value
+                    }))
+                  }
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* contact person */}
+              <div>
+                <Label>Contact Person *</Label>
+                <Input
+                  value={partnerForm.contactPerson}
+                  onChange={e =>
+                    setPartnerForm(f => ({
+                      ...f,
+                      contactPerson: e.target.value
+                    }))
+                  }
+                  required
+                />
+              </div>
+
+              {/* email */}
+              <div>
+                <Label>Email Address *</Label>
+                <Input
+                  type="email"
+                  value={partnerForm.email}
+                  onChange={e =>
+                    setPartnerForm(f => ({ ...f, email: e.target.value }))
+                  }
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* phone */}
+              <div>
+                <Label>Phone Number</Label>
+                <Input
+                  value={partnerForm.phone}
+                  onChange={e =>
+                    setPartnerForm(f => ({ ...f, phone: e.target.value }))
+                  }
+                />
+              </div>
+
+              {/* website */}
+              <div>
+                <Label>Website</Label>
+                <Input
+                  value={partnerForm.website}
+                  onChange={e =>
+                    setPartnerForm(f => ({ ...f, website: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* industry category */}
+              <div>
+                <Label>Industry / Category</Label>
+                <Select
+                  value={partnerForm.category}
+                  onValueChange={v =>
+                    setPartnerForm(f => ({ ...f, category: v }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Automotive">Automotive</SelectItem>
+                    <SelectItem value="Technology">Technology</SelectItem>
+                    <SelectItem value="Energy">Energy</SelectItem>
+                    <SelectItem value="Finance">Finance</SelectItem>
+                    <SelectItem value="Healthcare">Healthcare</SelectItem>
+                    <SelectItem value="Non-Profit">Non-Profit</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* proposed tier (only if sponsor) */}
+              {partnerForm.type === 'sponsor' && (
                 <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select onValueChange={(value) => setFormData({...formData, category: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(category => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="tier">Tier (for sponsors)</Label>
-                  <Select onValueChange={(value) => setFormData({...formData, tier: value})}>
+                  <Label>Proposed Sponsorship Tier</Label>
+                  <Select
+                    value={partnerForm.proposedTier}
+                    onValueChange={v =>
+                      setPartnerForm(f => ({ ...f, proposedTier: v }))
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select tier" />
                     </SelectTrigger>
                     <SelectContent>
-                      {tiers.map(tier => (
-                        <SelectItem key={tier} value={tier}>{tier}</SelectItem>
-                      ))}
+                      <SelectItem value="Platinum">Platinum</SelectItem>
+                      <SelectItem value="Gold">Gold</SelectItem>
+                      <SelectItem value="Silver">Silver</SelectItem>
+                      <SelectItem value="Bronze">Bronze</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              {/* Logo Upload Section */}
-              <div className="space-y-2">
-                <Label htmlFor="logo">Sponsor Logo</Label>
-                <div className="flex items-center space-x-4">
-                  <div className="flex-1">
-                    <Input
-                      id="logo"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        if (!file.type.startsWith('image/')) {
-                          toast.error('Please select a valid image file');
-                          return;
-                        }
-                        if (file.size > 5 * 1024 * 1024) {
-                          toast.error('Image size should be less than 5MB');
-                          return;
-                        }
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          const result = ev.target?.result as string;
-                          setLogoPreview(result);
-                          setFormData(prev => ({ ...prev, logo: result }));
-                        };
-                        reader.readAsDataURL(file);
-                      }}
-                      className="cursor-pointer"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Upload a logo for this sponsor (max 5MB, image files only) or paste a URL below
-                    </p>
-                    <Input
-                      id="logo-url"
-                      value={formData.logo}
-                      onChange={(e) => {
-                        setFormData({...formData, logo: e.target.value});
-                        setLogoPreview(e.target.value);
-                      }}
-                      placeholder="Enter logo URL or Google Drive link"
-                      className="mt-2"
-                    />
-                  </div>
-                  {logoPreview && (
-                    <div className="flex-shrink-0">
-                      <img
-                        src={logoPreview}
-                        alt="Logo Preview"
-                        width={60}
-                        height={60}
-                        className="rounded-lg object-cover border-2 border-gray-300"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="website">Website</Label>
-                <Input
-                  id="website"
-                  value={formData.website}
-                  onChange={(e) => setFormData({...formData, website: e.target.value})}
-                  placeholder="https://example.com"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Company/Organization description"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="contribution">Contribution *</Label>
-                <Textarea
-                  id="contribution"
-                  value={formData.contribution}
-                  onChange={(e) => setFormData({...formData, contribution: e.target.value})}
-                  placeholder="What they contribute to the cause"
-                  rows={2}
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="since">Partner Since</Label>
-                  <Input
-                    id="since"
-                    value={formData.since}
-                    onChange={(e) => setFormData({...formData, since: e.target.value})}
-                    placeholder="e.g., 2022"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="contactPerson">Contact Person</Label>
-                  <Input
-                    id="contactPerson"
-                    value={formData.contactPerson}
-                    onChange={(e) => setFormData({...formData, contactPerson: e.target.value})}
-                    placeholder="Contact person name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="amount">Amount (USD)</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                    placeholder="Sponsorship amount"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="contactEmail">Contact Email</Label>
-                <Input
-                  id="contactEmail"
-                  type="email"
-                  value={formData.contactEmail}
-                  onChange={(e) => setFormData({...formData, contactEmail: e.target.value})}
-                  placeholder="contact@example.com"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsAddingNew(false);
-                    setEditingItem(null);
-                    resetForm();
-                  }}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-                <Button onClick={editingItem ? handleUpdate : handleAdd}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {editingItem ? 'Update' : 'Add'} {formData.type === 'sponsor' ? 'Sponsor' : 'Partner'}
-                </Button>
-              </div>
+              )}
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+
+            <div>
+              <Label>Company Description</Label>
+              <Textarea
+                rows={3}
+                value={partnerForm.description}
+                onChange={e =>
+                  setPartnerForm(f => ({ ...f, description: e.target.value }))
+                }
+              />
+            </div>
+
+            <div>
+              <Label>Proposed Contribution</Label>
+              <Textarea
+                rows={3}
+                value={partnerForm.contribution}
+                onChange={e =>
+                  setPartnerForm(f => ({ ...f, contribution: e.target.value }))
+                }
+              />
+            </div>
+
+            <div>
+              <Label>Additional Message</Label>
+              <Textarea
+                rows={2}
+                value={partnerForm.message}
+                onChange={e =>
+                  setPartnerForm(f => ({ ...f, message: e.target.value }))
+                }
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsPartnerFormOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">
+                <Send className="h-4 w-4 mr-2" />
+                Submit Application
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
-  );
+  )
 }
