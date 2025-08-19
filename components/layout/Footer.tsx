@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { TreePine, Facebook, Instagram, Twitter, Youtube, Mail } from "lucide-react"
+import { Bike, Facebook, Instagram, Twitter, Youtube, Mail } from "lucide-react"
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -11,9 +11,9 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <TreePine className="h-6 w-6 text-primary" />
+              <Bike className="h-5 w-5 text-blue-400 animate-pulse" />              
               <span className="text-xl font-bold">Biking Community of India</span>
-              {/* <Bike className="h-5 w-5 text-blue-400 animate-pulse" /> */}
+              {/* <TreePine className="h-6 w-6 text-primary" /> */}
             </div>
             <p className="text-gray-400 text-sm">
               We ride with unity and cause like worldwide to plant trees and protect our planet for future generations.
@@ -92,7 +92,7 @@ export function Footer() {
             <div className="flex items-center space-x-2 text-sm text-gray-400 text-gray-400 hover:text-white transition-colors">
               <Link href="mailto:" className="flex items-center space-x-2">
                 <Mail className="h-4 w-4" />
-                <span>info@saveearthride.com</span>
+                <span>admin@bikingcommunityofindia.com</span>
               </Link>
             </div>
           </div>
@@ -100,7 +100,7 @@ export function Footer() {
 
         <div className="border-t border-gray-800 mt-8 pt-8">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm text-gray-400">
-            <p>&copy; {currentYear} Save Earth Ride. All rights reserved.</p>
+            <p>&copy; {currentYear} BCI. All rights reserved.</p>
             <p className="flex items-center space-x-1">
               <span>Designed with</span>
               <span className="text-red-500 animate-pulse">❤️</span>
