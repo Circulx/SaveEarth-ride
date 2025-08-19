@@ -12,11 +12,11 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <TreePine className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">Save Earth Ride</span>
+              <span className="text-xl font-bold">Biking Community of India</span>
               {/* <Bike className="h-5 w-5 text-blue-400 animate-pulse" /> */}
             </div>
             <p className="text-gray-400 text-sm">
-              Uniting bikers worldwide to plant trees and protect our planet for future generations.
+              We ride with unity and cause like worldwide to plant trees and protect our planet for future generations.
             </p>
           </div>
 
