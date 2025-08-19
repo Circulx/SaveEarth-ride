@@ -209,6 +209,7 @@ export default function AdminSponsorsPage() {
     amount: '',
     type: 'sponsor'
   });
+  const [logoPreview, setLogoPreview] = useState<string>('');
 
   const tiers = ['Platinum', 'Gold', 'Silver', 'Bronze'];
   const categories = ['Automotive', 'Technology', 'Food & Beverage', 'Accessories', 'Non-Profit', 'Energy', 'Finance', 'Healthcare'];
@@ -426,6 +427,7 @@ export default function AdminSponsorsPage() {
       amount: item.amount.toString(),
       type: item.type
     });
+    setLogoPreview(item.logo || '');
   };
 
   // Reset form
@@ -435,6 +437,7 @@ export default function AdminSponsorsPage() {
       contribution: '', since: '', category: '', contactEmail: '', 
       contactPerson: '', amount: '', type: 'sponsor'
     });
+    setLogoPreview('');
   };
 
   // Filter data
@@ -767,29 +770,6 @@ export default function AdminSponsorsPage() {
                 </div>
               </div>
 
-              {/* Logo Input with Preview */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="logo">Logo URL</Label>
-                  <Input
-                    id="logo"
-                    value={formData.logo}
-                    onChange={(e) => setFormData({...formData, logo: e.target.value})}
-                    placeholder="Enter logo URL or Google Drive link"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Supports Google Drive links, direct image URLs
-                  </p>
-                </div>
-                <div>
-                  <Label>Logo Preview</Label>
-                  <SponsorLogoPreview
-                    src={formData.logo}
-                    alt="Logo preview"
-                    className="w-full h-24 rounded-lg object-cover border-2 border-gray-300"
-                  />
-                </div>
-              </div>
               {/* Logo Upload Section */}
               <div className="space-y-2">
                 <Label htmlFor="logo">Sponsor Logo</Label>
@@ -847,6 +827,7 @@ export default function AdminSponsorsPage() {
                   )}
                 </div>
               </div>
+
               <div>
                 <Label htmlFor="website">Website</Label>
                 <Input
