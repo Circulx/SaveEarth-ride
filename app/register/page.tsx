@@ -30,7 +30,7 @@ const clubSchema = z.object({
   country: z.string().min(1, "Country is required"),
   city: z.string().min(1, "City is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
-  licenceNumber: z.string().min(1, "Vehicle number is required"),
+  licenceNumber: z.string().min(1, "Second Admin name is required"),
   website: z.string().optional(),
   instagram: z.string().optional(),
   facebook: z.string().optional(),
@@ -450,12 +450,12 @@ export default function RegisterPage() {
                 <div className="space-y-2">
                   <Label htmlFor="licenceNumber" className="flex items-center space-x-2">
                     <Car className="h-4 w-4" />
-                    <span>Vehicle Number *</span>
+                    <span>Second Admin *</span>
                   </Label>
                   <Input
                     id="licenceNumber"
                     {...register("licenceNumber")}
-                    placeholder="Enter your Vehicle number"
+                    placeholder="Please share second Admin name"
                     className="bg-background"
                   />
                   {errors.licenceNumber && (
