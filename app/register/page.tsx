@@ -290,7 +290,7 @@ export default function RegisterPage() {
                         )}
                       </div>
                       <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Label htmlFor="phone">Emergency Contact Number *</Label>
                     <Input
                       id="phone"
                       {...register("phone")}
@@ -450,12 +450,12 @@ export default function RegisterPage() {
                 <div className="space-y-2">
                   <Label htmlFor="licenceNumber" className="flex items-center space-x-2">
                     <Car className="h-4 w-4" />
-                    <span>Second Admin *</span>
+                    <span>Vehicle Number</span>
                   </Label>
                   <Input
                     id="licenceNumber"
                     {...register("licenceNumber")}
-                    placeholder="Please share second Admin name"
+                    placeholder="Vehicle Number"
                     className="bg-background"
                   />
                   {errors.licenceNumber && (
